@@ -1,0 +1,142 @@
+{% extends 'base/main.html' %}
+
+{% block content %}
+<section class="max-w-5xl mx-auto py-10">
+    <h1 class="text-3xl font-bold mb-8 text-center">{{ podcast.nom }}</h1>
+    <div class="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+
+        
+        <!-- Card principale : infos podcast -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-green-50">
+            <div class="text-2xl font-bold text-green-700 mb-3">Informations podcast</div>
+            <ul class="text-sm space-y-1">
+                <li><b title="Nom du podcast">Nom :</b> {{ podcast.nom }}</li>
+                <li><b title="Fréquence de publication">Périodicité :</b> {{ podcast.periodicite }}</li>
+                <li><b title="Durée moyenne d'un épisode">Durée moyenne :</b> {{ podcast.duree_moyenne }} min</li>
+                <li><b title="Variabilité de la durée">Durée variable :</b> {{ podcast.duree_variable }}</li>
+                <li><b title="Nombre d'épisodes collectés (1ère/2ème collecte)">Nb épisodes collectés :</b> {{ podcast.nb_episode_collecte_1 }} / {{ podcast.nb_episode_collecte_2 }}</li>
+                <li><b title="Nombre de téléchargements en France">Téléchargements France :</b> {{ podcast.nb_telechargement_france }}</li>
+                <li><b title="Nombre de téléchargements dans le monde">Téléchargements Monde :</b> {{ podcast.nb_telechargement_monde }}</li>
+                <li><b title="Moment d'interruption lors de la première collecte">Interrompu moment 1 :</b> {{ podcast.interrompu_moment_1_collection }}</li>
+                <li><b title="Moment d'interruption lors de la deuxième collecte">Interrompu moment 2 :</b> {{ podcast.interrompu_moment_2_collection }}</li>
+            </ul>
+        </div>
+
+        <!-- Card Dates -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-blue-50">
+            <div class="text-2xl font-bold text-blue-700 mb-3" title="Dates importantes du podcast">Dates</div>
+            <ul class="text-sm space-y-1">
+                <li><b title="Date de sortie du premier épisode">1er épisode :</b> {{ podcast.date_premier_episode }}</li>
+                <li><b title="Date de sortie du dernier épisode">Dernier épisode :</b> {{ podcast.date_derniere_episode }}</li>
+                <li><b title="Date de la première collecte">Collecte 1 :</b> {{ podcast.date_collecte_1 }}</li>
+                <li><b title="Date de la deuxième collecte">Collecte 2 :</b> {{ podcast.date_collecte_2 }}</li>
+                <li><b title="Nombre de jours entre le premier et le dernier épisode">Différence de dates :</b> {{ podcast.datediff }}</li>
+            </ul>
+        </div>
+
+        <!-- Genres -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-purple-50">
+            <div class="text-2xl font-bold text-purple-700 mb-3" title="Catégories de contenu du podcast">Genres</div>
+            <div>
+                {% for g in podcast.genre.all %}
+                    <span class="inline-block bg-blue-100 px-2 py-1 rounded">{{ g.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Producteur -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-pink-50">
+            <div class="text-2xl font-bold text-pink-700 mb-3" title="Entité qui produit le podcast">Producteur</div>
+            {% if podcast.producteur %}
+                <ul class="text-sm">
+                    <li><b>Nom :</b> <span title="Nom du producteur">{{ podcast.producteur.nom }}</span></li>
+                    <li><b>Modèle éco :</b> <span title="Modèle économique du producteur">{{ podcast.producteur.model_eco }}</span></li>
+                    <li><b>Natif/enrichi :</b> <span title="Type de contenu produit">{{ podcast.producteur.natif_enrichi }}</span></li>
+                    <li><b>Status :</b> <span title="Statut du producteur">{{ podcast.producteur.status_producteur }}</span></li>
+                    <li><b>Type :</b> <span title="Type de producteur">{{ podcast.producteur.type_producteur }}</span></li>
+                    <li><b>Nb épisodes collectés 1 :</b> <span title="Nombre d'épisodes collectés lors de la première collecte">{{ podcast.producteur.nb_episode_collecte_1 }}</span></li>
+                    <li><b>Nb épisodes collectés 2 :</b> <span title="Nombre d'épisodes collectés lors de la deuxième collecte">{{ podcast.producteur.nb_episode_collecte_2 }}</span></li>
+                </ul>
+            {% else %}-{% endif %}
+        </div>
+
+        <!-- Créateurs -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-yellow-50">
+            <div class="text-2xl font-bold text-yellow-700 mb-3" title="Personnes ayant créé le podcast">Créateurs</div>
+            {% for c in podcast.createur.all %}
+                <div class="mb-2">
+                    <b>{{ c.prenom|capfirst }} {{ c.nom|upper }}</b>
+                    <ul class="ml-4 text-sm">
+                        <li title="Adresse mail du créateur">Mail : {{ c.mail }}</li>
+                        <li title="Genre du créateur">Genre : {{ c.genre }}</li>
+                        <li title="Est-ce l'animateur principal ?">Host : {{ c.is_host }}</li>
+                        <li title="Catégorie du créateur">Catégorie : {{ c.categoeir_createur }}</li>
+                    </ul>
+                </div>
+            {% empty %}-{% endfor %}
+        </div>
+
+        <!-- Plateformes -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-indigo-50">
+            <div class="text-2xl font-bold text-indigo-700 mb-3" title="Plateformes de diffusion du podcast">Plateformes</div>
+            <div>
+                {% for p in podcast.plateforme.all %}
+                    <span class="inline-block bg-gray-100 px-2 py-1 rounded">{{ p.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Rubriques -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-orange-50">
+            <div class="text-2xl font-bold text-orange-700 mb-3" title="Rubriques associées au podcast">Rubriques</div>
+            <div>
+                {% for r in podcast.rubrique.all %}
+                    <span class="inline-block bg-green-100 px-2 py-1 rounded">{{ r.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Collections -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-blue-50">
+            <div class="text-2xl font-bold text-blue-700 mb-3" title="Collections auxquelles appartient le podcast">Collections</div>
+            <div>
+                {% for c in podcast.collection.all %}
+                    <span class="inline-block bg-indigo-100 px-2 py-1 rounded">{{ c.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Récompenses -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-green-50">
+            <div class="text-2xl font-bold text-green-700 mb-3" title="Récompenses reçues par le podcast">Récompenses</div>
+            <div>
+                {% for r in podcast.recompense.all %}
+                    <span class="inline-block bg-yellow-100 px-2 py-1 rounded">{{ r.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Mots-clés -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-purple-50">
+            <div class="text-2xl font-bold text-purple-700 mb-3" title="Mots-clés associés au podcast">Mots-clés</div>
+            <div>
+                {% for m in podcast.motcle.all %}
+                    <span class="inline-block bg-purple-100 px-2 py-1 rounded">{{ m.label }}</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+        <!-- Étiquettes -->
+        <div class="break-inside-avoid shadow-lg p-4 mb-6 bg-pink-50">
+            <div class="text-2xl font-bold text-pink-700 mb-3" title="Étiquettes associées au podcast">Étiquettes</div>
+            <div>
+                {% for e in podcast.etiquette.all %}
+                    <span class="inline-block bg-pink-100 px-2 py-1 rounded">{{ e.label }} ({{ e.type_etiquette }})</span>
+                {% empty %}-{% endfor %}
+            </div>
+        </div>
+
+    </div>
+    <a href="{% url 'podcast' %}" class="text-blue-600 hover:underline mt-8 inline-block">← Retour à la liste</a>
+</section>
+{% endblock %}

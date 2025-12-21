@@ -1,0 +1,289 @@
+{% extends 'base/main.html' %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto py-10">
+    <h1 class="text-3xl font-bold mb-8 text-center">Statistiques descriptives des podcasts</h1>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        <!-- 1A. Taux de croissance du nombre d’épisodes -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Taux de croissance du nombre d’épisodes</div>
+            <canvas id="growthBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 2A. Top 10 des podcasts les plus téléchargés -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Top 10 des podcasts les plus téléchargés</div>
+            <canvas id="top10DlBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 2B. Ratio Téléchargements Monde / France -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Ratio Téléchargements Monde / France</div>
+            <canvas id="ratioScatterChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 2C. Performances moyennes par genre -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Performances moyennes par genre</div>
+            <canvas id="genreDlBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 3A. Producteurs les plus productifs -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Producteurs les plus productifs</div>
+            <canvas id="prodProdBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 3B. Corrélation modèle économique et performance -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Corrélation modèle économique et performance</div>
+            <canvas id="ecoPerfScatterChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 3C. Répartition des types de producteurs -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Répartition des types de producteurs</div>
+            <canvas id="typeProdPieChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 4A. Répartition des podcasts par rubrique -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Répartition des podcasts par rubrique</div>
+            <canvas id="rubriqueBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 4A. Répartition des podcasts par collection -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Répartition des podcasts par collection</div>
+            <canvas id="collectionBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 4B. Mots-clés les plus fréquents -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Mots-clés les plus fréquents</div>
+            <canvas id="motcleBarChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 4C. Nombre moyen de genres/étiquettes par podcast -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[200px]">
+            <div class="text-xl font-semibold mb-4">Nombre moyen de genres/étiquettes par podcast</div>
+            <div class="text-center text-2xl font-bold text-blue-700">Genres : {{ avg_genres|floatformat:1 }}</div>
+            <div class="text-center text-2xl font-bold text-pink-700">Étiquettes : {{ avg_etiquettes|floatformat:1 }}</div>
+        </div>
+
+        <!-- 6A. Nombre moyen de créateurs par podcast -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[200px]">
+            <div class="text-xl font-semibold mb-4">Nombre moyen de créateurs par podcast</div>
+            <div class="text-center text-2xl font-bold text-green-700">{{ avg_createurs|floatformat:1 }}</div>
+        </div>
+
+        <!-- 6B. Répartition des genres parmi les créateurs -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Répartition des genres parmi les créateurs</div>
+            <canvas id="createurGenrePieChart" class="flex-1 w-full"></canvas>
+        </div>
+
+        <!-- 6C. Créateurs les plus présents -->
+        <div class="bg-white rounded shadow p-6 mb-8 flex flex-col min-h-[320px]">
+            <div class="text-xl font-semibold mb-4">Créateurs les plus présents</div>
+            <canvas id="createurTopBarChart" class="flex-1 w-full"></canvas>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+/* 1A. Taux de croissance du nombre d’épisodes */
+const growthLabels = [{% for p in podcasts_growth %}"{{ p.nom }}",{% endfor %}];
+const growthData = [{% for p in podcasts_growth %}{{ p.taux_croissance|default:0|floatformat:2 }},{% endfor %}];
+new Chart(document.getElementById('growthBarChart'), {
+    type: 'bar',
+    data: {
+        labels: growthLabels,
+        datasets: [{
+            label: 'Taux de croissance (%)',
+            data: growthData,
+            backgroundColor: 'rgba(59,130,246,0.7)'
+        }]
+    },
+    options: { indexAxis: 'y' }
+});
+
+/* 2A. Top 10 des podcasts les plus téléchargés */
+const top10Labels = [{% for p in top10_dl %}"{{ p.nom }}",{% endfor %}];
+const top10Data = [{% for p in top10_dl %}{{ p.nb_telechargement_monde }},{% endfor %}];
+new Chart(document.getElementById('top10DlBarChart'), {
+    type: 'bar',
+    data: {
+        labels: top10Labels,
+        datasets: [{
+            label: 'Téléchargements Monde',
+            data: top10Data,
+            backgroundColor: 'rgba(251,191,36,0.7)'
+        }]
+    }
+});
+
+/* 2B. Ratio Téléchargements Monde / France (scatter plot) */
+const ratioLabels = [{% for p in podcasts_ratio %}"{{ p.nom }}",{% endfor %}];
+const ratioFrance = [{% for p in podcasts_ratio %}{{ p.nb_telechargement_france }},{% endfor %}];
+const ratioMonde = [{% for p in podcasts_ratio %}{{ p.nb_telechargement_monde }},{% endfor %}];
+new Chart(document.getElementById('ratioScatterChart'), {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Podcasts',
+            data: ratioFrance.map((x, i) => ({x, y: ratioMonde[i]})),
+            backgroundColor: 'rgba(251,191,36,0.7)'
+        }]
+    },
+    options: {
+        scales: {
+            x: { title: { display: true, text: 'Téléchargements France' } },
+            y: { title: { display: true, text: 'Téléchargements Monde' } }
+        }
+    }
+});
+
+/* 2C. Performances moyennes par genre */
+const genreDlLabels = [{% for g in genre_dl %}"{{ g.label }}",{% endfor %}];
+const genreDlData = [{% for g in genre_dl %}{{ g.avg_dl|default:0|floatformat:1 }},{% endfor %}];
+new Chart(document.getElementById('genreDlBarChart'), {
+    type: 'bar',
+    data: {
+        labels: genreDlLabels,
+        datasets: [{
+            label: 'Téléchargements Monde (moyenne)',
+            data: genreDlData,
+            backgroundColor: 'rgba(34,197,94,0.5)'
+        }]
+    }
+});
+
+/* 3A. Producteurs les plus productifs */
+const prodProdLabels = [{% for p in prod_prod %}"{{ p.nom }}",{% endfor %}];
+const prodProdData = [{% for p in prod_prod %}{{ p.count }},{% endfor %}];
+new Chart(document.getElementById('prodProdBarChart'), {
+    type: 'bar',
+    data: {
+        labels: prodProdLabels,
+        datasets: [{
+            label: 'Nombre de podcasts',
+            data: prodProdData,
+            backgroundColor: 'rgba(236,72,153,0.5)'
+        }]
+    },
+    options: { indexAxis: 'y' }
+});
+
+/* 3B. Corrélation modèle économique et performance */
+const ecoPerfLabels = [{% for e in eco_perf %}"{{ e.model_eco }}",{% endfor %}];
+const ecoPerfData = [{% for e in eco_perf %}{{ e.avg_dl|default:0|floatformat:1 }},{% endfor %}];
+new Chart(document.getElementById('ecoPerfScatterChart'), {
+    type: 'scatter',
+    data: {
+        datasets: [{
+            label: 'Téléchargements Monde (moyenne)',
+            data: ecoPerfLabels.map((x, i) => ({x, y: ecoPerfData[i]})),
+            backgroundColor: 'rgba(59,130,246,0.7)'
+        }]
+    },
+    options: {
+        scales: {
+            x: { type: 'category', title: { display: true, text: 'Modèle économique' } },
+            y: { title: { display: true, text: 'Téléchargements (moyenne)' } }
+        }
+    }
+});
+
+/* 3C. Répartition des types de producteurs */
+const typeProdLabels = [{% for t in type_prod %}"{{ t.type_producteur }}",{% endfor %}];
+const typeProdData = [{% for t in type_prod %}{{ t.count }},{% endfor %}];
+new Chart(document.getElementById('typeProdPieChart'), {
+    type: 'pie',
+    data: {
+        labels: typeProdLabels,
+        datasets: [{
+            data: typeProdData,
+            backgroundColor: ['#60a5fa','#f472b6','#fbbf24','#34d399','#a78bfa','#f87171','#facc15','#38bdf8']
+        }]
+    }
+});
+
+/* 4A. Répartition des podcasts par rubrique */
+const rubriqueLabels = [{% for r in rubrique_counts %}"{{ r.label }}",{% endfor %}];
+const rubriqueData = [{% for r in rubrique_counts %}{{ r.count }},{% endfor %}];
+new Chart(document.getElementById('rubriqueBarChart'), {
+    type: 'bar',
+    data: {
+        labels: rubriqueLabels,
+        datasets: [{
+            label: 'Nombre de podcasts',
+            data: rubriqueData,
+            backgroundColor: 'rgba(59,130,246,0.7)'
+        }]
+    }
+});
+
+/* 4A. Répartition des podcasts par collection */
+const collectionLabels = [{% for c in collection_counts %}"{{ c.label }}",{% endfor %}];
+const collectionData = [{% for c in collection_counts %}{{ c.count }},{% endfor %}];
+new Chart(document.getElementById('collectionBarChart'), {
+    type: 'bar',
+    data: {
+        labels: collectionLabels,
+        datasets: [{
+            label: 'Nombre de podcasts',
+            data: collectionData,
+            backgroundColor: 'rgba(251,191,36,0.7)'
+        }]
+    }
+});
+
+/* 4B. Mots-clés les plus fréquents */
+const motcleLabels = [{% for m in motcle_counts %}"{{ m.label }}",{% endfor %}];
+const motcleData = [{% for m in motcle_counts %}{{ m.count }},{% endfor %}];
+new Chart(document.getElementById('motcleBarChart'), {
+    type: 'bar',
+    data: {
+        labels: motcleLabels,
+        datasets: [{
+            label: 'Nombre de podcasts',
+            data: motcleData,
+            backgroundColor: 'rgba(251,191,36,0.7)'
+        }]
+    }
+});
+
+/* 6B. Répartition des genres parmi les créateurs */
+const createurGenreLabels = [{% for g in createur_genre %}"{{ g.genre }}",{% endfor %}];
+const createurGenreData = [{% for g in createur_genre %}{{ g.count }},{% endfor %}];
+new Chart(document.getElementById('createurGenrePieChart'), {
+    type: 'pie',
+    data: {
+        labels: createurGenreLabels,
+        datasets: [{
+            data: createurGenreData,
+            backgroundColor: ['#60a5fa','#f472b6','#fbbf24','#34d399','#a78bfa','#f87171','#facc15','#38bdf8']
+        }]
+    }
+});
+
+/* 6C. Créateurs les plus présents */
+const createurTopLabels = [{% for c in createur_top %}"{{ c.prenom }} {{ c.nom }}",{% endfor %}];
+const createurTopData = [{% for c in createur_top %}{{ c.count }},{% endfor %}];
+new Chart(document.getElementById('createurTopBarChart'), {
+    type: 'bar',
+    data: {
+        labels: createurTopLabels,
+        datasets: [{
+            label: 'Nombre de podcasts',
+            data: createurTopData,
+            backgroundColor: 'rgba(59,130,246,0.7)'
+        }]
+    },
+    options: { indexAxis: 'y' }
+});
+</script>
+{% endblock %}
