@@ -1,0 +1,6 @@
+pyproject.toml
+peuplement.egg-info/PKG-INFO
+peuplement.egg-info/SOURCES.txt
+peuplement.egg-info/dependency_links.txt
+peuplement.egg-info/requires.txt
+peuplement.egg-info/top_level.txt
