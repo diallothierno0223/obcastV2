@@ -1,7 +1,12 @@
 [theme]
 base = "dark"
 primaryColor = "forestGreen"
-backgroundColor = "#517ac5ff"
+backgroundColor = "#C8EAF2"
 secondaryBackgroundColor = "#1A1D23"
-textColor = "white"
+textColor = "black"
 font = "sans serif"
+
+
+[theme.sidebar]
+backgroundColor="#007EB5"
+textColor="white"
