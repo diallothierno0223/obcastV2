@@ -1,0 +1,97 @@
+{% extends 'base/main.html' %}
+
+{% block content %}
+
+<main class="max-w-5xl mx-auto px-4 py-12 font-sans text-gray-800">
+    
+    <header class="mb-16 border-b border-gray-100 pb-8">
+        <h1 class="text-4xl font-extrabold text-blue-900 mb-4">Méthodologie</h1>
+        <p class="text-xl text-gray-600 leading-relaxed">
+            Comprendre la démarche scientifique et le processus de collecte de l'observatoire Obcast.
+        </p>
+    </header>
+
+    <div class="grid grid-cols-1 gap-12">
+        
+        <section class="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+            <h2 class="text-2xl font-bold text-blue-700 mb-6 flex items-center">
+                <!-- <span class="mr-3 bg-blue-100 p-2 rounded-lg">🔍</span> -->
+                Cartographier le secteur
+            </h2>
+            <p class="leading-relaxed mb-4">
+                La première tâche de l’observatoire a été de cartographier le secteur du podcast natif d’information français en réalisant une <span class="font-bold">base de données exhaustive</span>. 
+            </p>
+            <div class="grid md:grid-cols-2 gap-6 mt-6">
+                <div class="bg-gray-50 p-5 rounded-xl border-l-4 border-blue-500">
+                    <h4 class="font-bold mb-2 text-blue-900">Vue d'ensemble</h4>
+                    <p class="text-sm">Saisir l’existant dans le secteur français, particulièrement au sein des médias traditionnels et de la presse écrite.</p>
+                </div>
+                <div class="bg-gray-50 p-5 rounded-xl border-l-4 border-blue-500">
+                    <h4 class="font-bold mb-2 text-blue-900">Analyse de terrain</h4>
+                    <p class="text-sm">Faire émerger des acteurs et des constats clés pour approfondir les enquêtes de terrain ultérieures.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold text-blue-700 mb-6 flex items-center">
+                <!-- <span class="mr-3 bg-blue-100 p-2 rounded-lg"></span> -->
+                Structure de l'analyse
+            </h2>
+            <p class="mb-8">
+                La base Obcast associe des perspectives <span class="font-bold">quantitatives et qualitatives</span>. Chaque podcast est analysé selon <span class="font-bold">54 champs spécifiques</span> répartis en six catégories :
+            </p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Conditions de production</div>
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Identité du personnel</div>
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Aspects éditoriaux</div>
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Espaces de diffusion</div>
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Temporalités</div>
+                <div class="border border-gray-200 p-4 rounded-lg text-center hover:bg-blue-50 transition">Réception</div>
+            </div>
+            <div class="mt-6 italic text-sm text-gray-500">
+                Pour plus de détails, consultez <a href="https://lesenjeux.univ-grenoble-alpes.fr/2023/varia/les-podcasts-natifs-dinformation-en-france-methodologie-pour-un-recensement-de-loffre/" class="text-blue-600 underline hover:text-blue-800">l’article méthodologique complet (Lesaunier)</a>.
+            </div>
+        </section>
+
+        <section class="bg-blue-900 text-white rounded-3xl p-10">
+            <h2 class="text-2xl font-bold mb-8">Périmètre du recensement</h2>
+            <p class="mb-10 text-blue-100">
+                Nous avons croisé les données de l’ACPM (mars 2022) avec une veille systématique des studios de production, radios, TV et pure players.
+            </p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
+                    <div class="text-4xl font-black mb-2">2 436</div>
+                    <div class="text-blue-200 text-sm uppercase tracking-wider font-semibold">Titres recensés</div>
+                </div>
+                <div class="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
+                    <div class="text-4xl font-black mb-2">128 696</div>
+                    <div class="text-blue-200 text-sm uppercase tracking-wider font-semibold">Épisodes</div>
+                </div>
+                <div class="p-6 bg-white/10 rounded-2xl backdrop-blur-sm">
+                    <div class="text-4xl font-black mb-2">235</div>
+                    <div class="text-blue-200 text-sm uppercase tracking-wider font-semibold">Producteurs</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="border-l-4 border-blue-200 pl-8 py-4">
+            <h2 class="text-xl font-bold text-blue-900 mb-4 text-sm uppercase tracking-widest">Chronologie de collecte</h2>
+            <div class="space-y-6">
+                <div class="relative">
+                    <span class="font-bold text-blue-600">Phase 1 :</span> Mars – Juillet 2022
+                </div>
+                <div class="relative">
+                    <span class="font-bold text-blue-600">Phase 2 :</span> Septembre 2023 – Mars 2024
+                </div>
+                <p class="text-gray-600 pt-4">
+                    La base couvre une période historique allant du <span class="font-semibold text-gray-900">1er mars 2003</span> (premier titre identifié) au <span class="font-semibold text-gray-900">1er mars 2024</span>.
+                </p>
+            </div>
+        </section>
+
+    </div>
+</main>
+
+{% endblock %}

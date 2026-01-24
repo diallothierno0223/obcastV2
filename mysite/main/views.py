@@ -5,7 +5,10 @@ from .models import Podcast
 from django.db.models import F, Q, FloatField, ExpressionWrapper, Count, Avg, Min, Max, Sum
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models.functions import ExtractYear, NullIf
-from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, Collection, MotCle, Createur
+from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, MotCle, Createur #  Collection,
+
+import csv
+from datetime import datetime
 
 # Create your views here.
 
@@ -13,94 +16,142 @@ from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, Collection
 def home(request): 
     return render(request, "main/accueil.html")
 
+def methodologie(request): 
+    return render(request, "main/methodologie.html")
+
+def publication_event(request): 
+    return render(request, "main/publication.html")
+
+def contact(request): 
+    if request.method == "POST":
+        # Traitez les données du formulaire ici (par exemple, en les enregistrant dans la base de données ou en envoyant un e-mail)
+        # name = request.POST.get("name")
+        # email = request.POST.get("email")
+        # message = request.POST.get("message")
+        # Vous pouvez ajouter votre logique de traitement ici
+
+        return HttpResponse("Merci pour votre message ! Nous vous contacterons bientôt.")
+    return render(request, "main/contact.html")
 
 
-def podcast(request) :
-    podcasts = Podcast.objects.prefetch_related(
+def telechargement(request):
+    # this function merge all table in database and return a csv file of result for download
+    # Query all podcasts with optimized select_related and prefetch_related
+    if request.method == "POST":
+        # Use iterator() to avoid loading all data into memory at once
+        podcasts = Podcast.objects.select_related("producteur").prefetch_related(
+            "motcle",
+            "genre",
+            "createur"
+        ).all().iterator(chunk_size=100)
+
+        # Create CSV response
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="podcasts_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+
+        # Create CSV writer
+        writer = csv.writer(response, delimiter=';')
+        
+        # Write header row
+        header = [
+            'ID', 'Nom du Podcast', 'Date Premier Episode', 'Date Dernière Episode',
+            'Périodicité', 'Durée Moyenne (min)', 'Nb Episodes Collectés 1', 'Nb Episodes Collectés 2',
+            'Mots-clés', 'Producteur', 'Type Producteur', 'Status Producteur',
+            'Genres', 'Créateurs', 'Genre Créateurs',
+            'Téléchargements France', 'Téléchargements Monde', 'Durée d\'activité (jours)'
+        ]
+        writer.writerow(header)
+
+        # Write data rows
+        for p in podcasts:
+            prod_nom = p.producteur.nom if p.producteur else "N/A"
+            prod_type = p.producteur.type_producteur if p.producteur else "N/A"
+            prod_status = p.producteur.status_producteur if p.producteur else "N/A"
+
+            row = [
+                p.id,
+                p.nom,
+                p.date_premier_episode if p.date_premier_episode else "",
+                p.date_derniere_episode if p.date_derniere_episode else "",
+                p.periodicite if p.periodicite else "",
+                p.duree_moyenne if p.duree_moyenne else "",
+                p.nb_episode_collecte_1 if p.nb_episode_collecte_1 else "",
+                p.nb_episode_collecte_2 if p.nb_episode_collecte_2 else "",
+                " | ".join([m.label for m in p.motcle.all()]),
+                prod_nom,
+                prod_type,
+                prod_status,
+                " | ".join([m.label for m in p.genre.all()]),
+                " | ".join([f"{m.nom.capitalize()}" for m in p.createur.all()]),
+                " | ".join([m.genre for m in p.createur.all()]),
+                p.nb_telechargement_france if hasattr(p, 'nb_telechargement_france') and p.nb_telechargement_france else "",
+                p.nb_telechargement_monde if hasattr(p, 'nb_telechargement_monde') and p.nb_telechargement_monde else "",
+                p.datediff if hasattr(p, 'datediff') and p.datediff else ""
+            ]
+            writer.writerow(row)
+
+        return response
+    return render(request, "main/telechargement.html")
+
+def podcast(request):
+    from django.core.paginator import Paginator
+    
+    print("start reading")
+    podcasts_qs = Podcast.objects.select_related("producteur").prefetch_related(
         "motcle",
-        "producteur",
-        "producteur",
-        "producteur",
         "genre",
-        "createur",
-        "createur",
         "createur"
-
     ).all()
+
+    # Setup pagination - 20 items per page
+    paginator = Paginator(podcasts_qs, 20)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
     data = []
 
-    for p in podcasts:
+    for p in page_obj:
+        # On gère le cas où producteur est None (si défini en SET_NULL dans les models)
+        prod_nom = p.producteur.nom if p.producteur else "N/A"
+        prod_type = p.producteur.type_producteur if p.producteur else "N/A"
+        prod_status = p.producteur.status_producteur if p.producteur else "N/A"
+
         data.append({
-            "id" : p.id,
-            "nom" : p.nom,
-            "date_premier_episode" : p.date_premier_episode,
-            "date_derniere_episode" : p.date_derniere_episode,
-            "periodicite" : p.periodicite,
-            "duree_moyenne" : p.duree_moyenne,
-            "nb_episode_collecte_1" : p.nb_episode_collecte_1,
-            "nb_episode_collecte_2" : p.nb_episode_collecte_2,
+            "id": p.id,
+            "nom": p.nom,
+            "date_premier_episode": p.date_premier_episode,
+            "date_derniere_episode": p.date_derniere_episode,
+            "periodicite": p.periodicite,
+            "duree_moyenne": p.duree_moyenne,
+            "nb_episode_collecte_1": p.nb_episode_collecte_1,
+            "nb_episode_collecte_2": p.nb_episode_collecte_2,
             "mot_cle": [m.label for m in p.motcle.all()],
-            "nom_producteur" : p.producteur.nom, 
-            "type_producteur" : p.producteur.type_producteur,
-            "status_producteur" : p.producteur.status_producteur,
-            "genre_podcast" : [m.label for m in p.genre.all()],
-            "createur" : [f"{m.prenom.capitalize()} {m.nom.upper()}" for m in p.createur.all()],
-            "genre_createur" : [m.genre for m in p.createur.all()]
+            "nom_producteur": prod_nom, 
+            "type_producteur": prod_type,
+            "status_producteur": prod_status,
+            "genre_podcast": [m.label for m in p.genre.all()],
+            "createur": [f"{m.nom.capitalize()}" for m in p.createur.all()],
+            "genre_createur": [m.genre for m in p.createur.all()]
         })
 
-
-
+    print(f"Data prepared for {len(data)} podcasts on page {page_number}")
     r = list(range(50))
-    return render(request, "main/podcast.html", context={"podcasts" : data, "r" : r})
+    
+    return render(request, "main/podcast.html", context={
+        "podcasts": data,
+        "page_obj": page_obj,
+        "paginator": paginator,
+        "total_count": paginator.count,
+        "r": r
+    })
 
-
-
-def podcasts_list(request):
-    podcasts = Podcast.objects.prefetch_related(
-        "motcle",
-        "producteur",
-        "producteur",
-        "producteur",
-        "genre",
-        "createur",
-        "createur",
-        "createur"
-
-    ).all()
-    data = []
-
-    for p in podcasts:
-        data.append({
-            "id" : p.id,
-            "nom" : p.nom,
-            "date_premier_episode" : p.date_premier_episode,
-            "date_derniere_episode" : p.date_derniere_episode,
-            "periodicite" : p.periodicite,
-            "duree_moyenne" : p.duree_moyenne,
-            "nb_episode_collecte_1" : p.nb_episode_collecte_1,
-            "nb_episode_collecte_2" : p.nb_episode_collecte_2,
-            "mot_cle": [m.label for m in p.motcle.all()],
-            "nom_producteur" : p.producteur.nom, 
-            "type_producteur" : p.producteur.type_producteur,
-            "status_producteur" : p.producteur.status_producteur,
-            "genre_podcast" : [m.label for m in p.genre.all()],
-            "createur" : [f"{m.prenom.capitalize()} {m.nom.upper()}" for m in p.createur.all()],
-            "genre_createur" : [m.genre for m in p.createur.all()]
-        })
-
-    return JsonResponse({"data": data})
-
-
-
-# def podcast_detail(request, podcast_id):
-#     podcast = get_object_or_404(Podcast, id=podcast_id)
-#     return render(request, "main/podcast_detail.html", {"podcast": podcast})
 
 
 def podcast_detail(request, podcast_id):
     podcast = Podcast.objects.select_related('producteur').prefetch_related(
-        'motcle', 'rubrique', 'recompense', 'genre', 'plateforme', 'createur', 'etiquette', 'collection'
+        'motcle', 'rubrique', 'recompense', 'genre', 'plateforme', 'createur', 'etiquette'
     ).get(id=podcast_id)
+
     return render(request, "main/podcast_detail.html", {"podcast": podcast})
 
 
@@ -186,10 +237,10 @@ def podcast_stats(request):
     # 🧑‍💼 3C. Répartition des types de producteurs
     type_prod = Producteur.objects.values('type_producteur').annotate(count=Count('id'))
 
-    # 🗂️ 4A. Répartition des podcasts par rubrique
-    rubrique_counts = Rubrique.objects.annotate(count=Count('podcast')).values('label', 'count')
-    # 🗂️ 4A. Répartition des podcasts par collection
-    collection_counts = Collection.objects.annotate(count=Count('podcast')).values('label', 'count')
+    # # 🗂️ 4A. Répartition des podcasts par rubrique
+    # rubrique_counts = Rubrique.objects.annotate(count=Count('podcast')).values('label', 'count')
+    # # 🗂️ 4A. Répartition des podcasts par collection
+    # collection_counts = Collection.objects.annotate(count=Count('podcast')).values('label', 'count')
 
     # 🗂️ 4B. Analyse des mots-clés
     motcle_counts = MotCle.objects.annotate(count=Count('podcast')).order_by('-count')[:20]
@@ -224,8 +275,8 @@ def podcast_stats(request):
         "prod_prod": list(prod_prod),
         "eco_perf": list(eco_perf),
         "type_prod": list(type_prod),
-        "rubrique_counts": list(rubrique_counts),
-        "collection_counts": list(collection_counts),
+        # "rubrique_counts": list(rubrique_counts),
+        # "collection_counts": list(collection_counts),
         "motcle_counts": list(motcle_counts),
         "avg_genres": avg_genres,
         "avg_etiquettes": avg_etiquettes,

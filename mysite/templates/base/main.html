@@ -18,7 +18,7 @@
     <header class="shadow-md bg-white tracking-wide relative z-50">
       <section
         class="flex items-center lg:justify-center flex-wrap gap-5 relative py-3 sm:px-10 px-4 border-b border-gray-300 lg:min-h-[75px] max-lg:min-h-[60px]">
-        <a href="javascript:void(0)"><img src="{% static "img/logo_carism.png" %}" alt="logo"
+        <a href="{% url 'home' %}"><img src="{% static "img/logo_carism.png" %}" alt="logo"
           class="md:w-[150px] w-[134px]" />
         </a>
 
@@ -62,19 +62,23 @@
               <a href="javascript:void(0)"><img src="https://readymadeui.com/readymadeui.svg" alt="logo" class="w-36" />
               </a>
             </li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'home' %}"
               class="hover:text-blue-700 text-blue-700 font-medium text-[15px] block">Accueil</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'podcast' %}"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Podcasts</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'podcast_stats' %}"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Analyses</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'podcast_recherche' %}"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Recherche avancée</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'download' %}"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Téléchargement</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'home' %}#apropos"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">À propos</a></li>
-            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href='javascript:void(0)'
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'methodologie' %}"
+              class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Méthodologie</a></li>
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'publication_event' %}"
+              class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Publications</a></li>
+            <li class="max-lg:border-b max-lg:border-gray-300 max-lg:py-3"><a href="{% url 'contact' %}"
               class="hover:text-blue-700 text-slate-900 font-medium text-[15px] block">Contact</a></li>
           </ul>
         </div>

@@ -44,7 +44,6 @@
                 </tr>
             </thead>
             <tbody>
-                {% for i in r %}
                 {% for p in podcasts %}
                 <tr>
                     <td><a href="{% url 'podcast_detail' podcast_id=p.id %}" class="text-blue-600 hover:underline">{{ p.nom }}</a></td>
@@ -72,7 +71,19 @@
                     </td>
                 </tr>
                 {% endfor %}
-                {% endfor %}
+
+                <!-- Pagination links -->
+                {% if page_obj.has_previous %}
+                <a href="?page=1">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                {% endif %}
+
+                Page {{ page_obj.number }} of {{ paginator.num_pages }}
+
+                {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}">Next</a>
+                <a href="?page={{ paginator.num_pages }}">Last</a>
+                {% endif %}
             </tbody>
         </table>
         </div>
@@ -87,9 +98,8 @@
 
 new DataTable('#podcastTable', {
     select: true,
-    columnControl: [
-        [{ extend: 'searchList' }]
-    ] 
+    pageLength: -1, 
+    searching: false,
 });
 </script>
 
