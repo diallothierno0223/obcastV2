@@ -1,16 +1,23 @@
 from django.shortcuts import render, HttpResponse, get_object_or_404
 from django.http import JsonResponse
-from .models import Podcast
 
-from django.db.models import F, Q, FloatField, ExpressionWrapper, Count, Avg, Min, Max, Sum
+from django.db.models import F, Q, FloatField, ExpressionWrapper, Avg, Min, Max, Sum
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models.functions import ExtractYear, NullIf
-from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, MotCle, Createur #  Collection,
+from django.db import models
+from django.db.models import Count, Q
+from django.core.paginator import Paginator
+
+
+from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, MotCle, Createur 
 
 import csv
 from datetime import datetime
+import json
 
-# Create your views here.
+
+
+
 
 
 def home(request): 
@@ -94,14 +101,13 @@ def telechargement(request):
     return render(request, "main/telechargement.html")
 
 def podcast(request):
-    from django.core.paginator import Paginator
     
     print("start reading")
     podcasts_qs = Podcast.objects.select_related("producteur").prefetch_related(
         "motcle",
         "genre",
         "createur"
-    ).all()
+    ).all().order_by('id')
 
     # Setup pagination - 20 items per page
     paginator = Paginator(podcasts_qs, 20)
@@ -136,6 +142,11 @@ def podcast(request):
 
     print(f"Data prepared for {len(data)} podcasts on page {page_number}")
     r = list(range(50))
+
+    print(f"Total items: {paginator.count}")
+    print(f"Nombre de pages: {paginator.num_pages}")
+    print(f"Page actuelle: {page_obj.number}")
+    print(f"A un suivant ?: {page_obj.has_next()}")
     
     return render(request, "main/podcast.html", context={
         "podcasts": data,
@@ -146,6 +157,53 @@ def podcast(request):
     })
 
 
+from django.db.models import Q
+
+def podcast_search(request):
+    # 1. Récupérer tous les podcasts (avec optimisation SQL)
+    query = Podcast.objects.select_related("producteur").prefetch_related(
+        "motcle", "genre", "createur"
+    ).all().order_by('id')
+
+    # 2. Récupérer les paramètres du formulaire (GET)
+    q_nom = request.GET.get('nom')
+    q_producteur = request.GET.get('producteur')
+    q_genre = request.GET.get('genre')
+    q_periodicite = request.GET.get('periodicite')
+    q_duree_min = request.GET.get('duree_min')
+
+    # 3. Appliquer les filtres dynamiquement
+    if q_nom:
+        query = query.filter(nom__icontains=q_nom)
+    
+    if q_producteur:
+        query = query.filter(producteur__id=q_producteur)
+        
+    if q_genre:
+        query = query.filter(genre__id=q_genre)
+
+    if q_periodicite:
+        query = query.filter(periodicite=q_periodicite)
+
+    if q_duree_min:
+        query = query.filter(duree_moyenne__gte=q_duree_min)
+
+    # 4. Pagination (On réutilise ta logique de 50 items)
+    paginator = Paginator(query, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+
+    # 5. Préparer les données pour le Select du formulaire
+    context = {
+        'page_obj': page_obj,
+        'podcasts': page_obj, # On boucle directement sur page_obj dans le template
+        'producteurs': Producteur.objects.all().order_by('nom'),
+        'genres': Genre.objects.all().order_by('label'),
+        # On renvoie les valeurs saisies pour les garder dans le formulaire (recherche persistante)
+        'params': request.GET 
+    }
+    
+    return render(request, "main/podcast_search.html", context)
 
 def podcast_detail(request, podcast_id):
     podcast = Podcast.objects.select_related('producteur').prefetch_related(
@@ -158,130 +216,71 @@ def podcast_detail(request, podcast_id):
 
 
 def podcast_stats(request):
-    # 1. Evolution du nombre d'épisodes dans le temps (par année)
-    episodes_per_year = (
-        Podcast.objects
-        .annotate(year=ExtractYear('date_premier_episode'))
-        .values('year')
-        .annotate(
-            total_episodes=Sum(F('nb_episode_collecte_1') + F('nb_episode_collecte_2'))
-        )
-        .order_by('year')
-    )
+    context = {}
 
-    # 2. Répartition des podcasts par genre
-    genres = Genre.objects.annotate(count=Count('podcast')).order_by('-count')
+    # avant graph stat global -------------------------------------------------------------
+    total_episodes = Podcast.objects.aggregate(Sum('nb_episode_collecte_1'))['nb_episode_collecte_1__sum'] or 0
 
-    # 3. Répartition par producteur
-    producteurs = Producteur.objects.annotate(count=Count('podcasts')).order_by('-count')
+    context['total_podcasts'] = Podcast.objects.count()
+    context['total_producteurs'] = Producteur.objects.count()
+    context['total_createurs'] = Createur.objects.count()
+    context['total_episodes'] = total_episodes
 
-    # 4. Durée moyenne des épisodes par genre
-    genre_duree = (
-        Genre.objects
-        .annotate(avg_duree=Avg('podcast__duree_moyenne'))
-        .order_by('-avg_duree')
-    )
+    # -----------------------------------------------------------------------------------------
 
-    # 5. Taux de téléchargement (France vs Monde) par podcast
-    podcasts_dl = Podcast.objects.values('nom', 'nb_telechargement_france', 'nb_telechargement_monde')
 
-    # 6. Répartition des podcasts par plateforme
-    plateformes = Plateforme.objects.annotate(count=Count('podcast')).order_by('-count')
 
-    # 7. Analyse de la durée d’activité (datediff)
-    datediffs = Podcast.objects.values_list('datediff', flat=True)
+    # --- 1. Répartition par Modèle Économique (Pie Chart) ---
+    # On agrège via le modèle Producteur
+    modeles_eco = list(Producteur.objects.values('model_eco')
+                       .annotate(count=Count('podcasts')) # Nombre de podcasts par modèle
+                       .order_by('-count'))
 
-    # 8. Corrélation modèle économique / succès
-    model_eco_stats = (
-        Producteur.objects
-        .annotate(
-            avg_dl=Avg('podcasts__nb_telechargement_monde')
-        )
-        .values('model_eco', 'avg_dl')
-        .order_by('-avg_dl')
-    )
+    # --- 2. Top Producteurs (Histogramme Horizontal) ---
+    top_producteurs = list(Producteur.objects.values('nom')
+                           .annotate(total=Count('podcasts'))
+                           .order_by('-total')[:10]) # Les 10 plus gros
 
-    # 🧭 1A. Taux de croissance du nombre d’épisodes (NullIf pour éviter division par zéro)
-    podcasts_growth = Podcast.objects.annotate(
-        taux_croissance=ExpressionWrapper(
-            100 * (F('nb_episode_collecte_2') - F('nb_episode_collecte_1')) /
-            NullIf(F('nb_episode_collecte_1'), 0),
-            output_field=FloatField()
-        )
-    ).values('nom', 'taux_croissance').order_by('-taux_croissance')
+    # --- 3. Natif vs Enrichi global ---
+    stats_global = list(Podcast.objects.values('producteur__natif_enrichi').annotate(
+        total=Count('id')
+    ).exclude(producteur__natif_enrichi="N/A"))
 
-    # 🎧 2A. Top 10 des podcasts les plus téléchargés
-    top10_dl = Podcast.objects.order_by('-nb_telechargement_monde').values('nom', 'nb_telechargement_monde')[:10]
 
-    # 🎧 2B. Ratio Téléchargements Monde / France (NullIf pour éviter division par zéro)
-    podcasts_ratio = Podcast.objects.annotate(
-        ratio=ExpressionWrapper(
-            F('nb_telechargement_monde') / NullIf(F('nb_telechargement_france'), 0),
-            output_field=FloatField()
-        )
-    ).values('nom', 'nb_telechargement_france', 'nb_telechargement_monde', 'ratio')
+    context.update({
+        'modeles_eco_json': json.dumps(modeles_eco),
+        'top_producteurs_json': json.dumps(top_producteurs),
+        'stats_global_json': json.dumps(stats_global)
+    })
 
-    # 🎧 2C. Performances moyennes par genre
-    genre_dl = Genre.objects.annotate(
-        avg_dl=Avg('podcast__nb_telechargement_monde')
-    ).values('label', 'avg_dl').order_by('-avg_dl')
+# --------------------------------------------------- today
+    # Dans ta vue Django
+    stats_genres = list(Createur.objects.values('genre')
+                        .annotate(total=Count('id'))
+                        .order_by('-total'))
+    context['stats_genres_json'] = json.dumps(stats_genres)
 
-    # 🧑‍💼 3A. Producteurs les plus productifs
-    prod_prod = Producteur.objects.annotate(count=Count('podcasts')).values('nom', 'count').order_by('-count')
 
-    # 🧑‍💼 3B. Corrélation modèle économique et performance
-    eco_perf = Producteur.objects.annotate(
-        avg_dl=Avg('podcasts__nb_telechargement_monde')
-    ).values('model_eco', 'avg_dl')
+    # Le Top 10 des Genres de Podcasts (Treemap ou Bar Chart)
+    stats_genres_podcast = list(Genre.objects.annotate(
+        nb_podcasts=Count('podcasts')
+    ).values('label', 'nb_podcasts').order_by('-nb_podcasts')[:15])
+    context['genres_podcast_json'] = json.dumps(stats_genres_podcast)
 
-    # 🧑‍💼 3C. Répartition des types de producteurs
-    type_prod = Producteur.objects.values('type_producteur').annotate(count=Count('id'))
+    # Attention : prendre un échantillon ou limiter si trop de données (ex: Top 100)
+    correlation_data = list(Podcast.objects.filter(audience_youtube_nb_vue__gt=0)
+                            .values('nom', 'duree_moyenne', 'audience_youtube_nb_vue')[:200])
+    context['correlation_json'] = json.dumps(correlation_data)
 
-    # # 🗂️ 4A. Répartition des podcasts par rubrique
-    # rubrique_counts = Rubrique.objects.annotate(count=Count('podcast')).values('label', 'count')
-    # # 🗂️ 4A. Répartition des podcasts par collection
-    # collection_counts = Collection.objects.annotate(count=Count('podcast')).values('label', 'count')
+    # --- Graph 9. Distribution des durées par Genre ---
+    # On récupère les données brutes pour que Plotly calcule les statistiques
+    stats_duree_genre = list(Podcast.objects.filter(duree_moyenne__gt=0, duree_moyenne__lt=300)
+                            .values('genre__label', 'duree_moyenne')
+                            .exclude(genre__label__isnull=True))
 
-    # 🗂️ 4B. Analyse des mots-clés
-    motcle_counts = MotCle.objects.annotate(count=Count('podcast')).order_by('-count')[:20]
+    context['stats_duree_genre_json'] = json.dumps(stats_duree_genre)
 
-    # 🗂️ 4C. Nombre moyen de genres ou étiquettes par podcast
-    avg_genres = Podcast.objects.annotate(nb_genres=Count('genre')).aggregate(avg=Avg('nb_genres'))['avg']
-    avg_etiquettes = Podcast.objects.annotate(nb_etiquettes=Count('etiquette')).aggregate(avg=Avg('nb_etiquettes'))['avg']
 
-    # 🧑‍🤝‍🧑 6A. Nombre moyen de créateurs par podcast
-    avg_createurs = Podcast.objects.annotate(nb_createurs=Count('createur')).aggregate(avg=Avg('nb_createurs'))['avg']
 
-    # 🧑‍🤝‍🧑 6B. Répartition des genres parmi les créateurs
-    createur_genre = Createur.objects.values('genre').annotate(count=Count('id'))
-
-    # 🧑‍🤝‍🧑 6C. Créateurs les plus présents
-    createur_top = Createur.objects.annotate(count=Count('podcast')).order_by('-count')[:10]
-
-    context = {
-        "episodes_per_year": list(episodes_per_year),
-        "genres": list(genres),
-        "producteurs": list(producteurs),
-        "genre_duree": list(genre_duree),
-        "podcasts_dl": list(podcasts_dl),
-        "plateformes": list(plateformes),
-        "datediffs": list(datediffs),
-        "model_eco_stats": list(model_eco_stats),
-
-        "podcasts_growth": list(podcasts_growth),
-        "top10_dl": list(top10_dl),
-        "podcasts_ratio": list(podcasts_ratio),
-        "genre_dl": list(genre_dl),
-        "prod_prod": list(prod_prod),
-        "eco_perf": list(eco_perf),
-        "type_prod": list(type_prod),
-        # "rubrique_counts": list(rubrique_counts),
-        # "collection_counts": list(collection_counts),
-        "motcle_counts": list(motcle_counts),
-        "avg_genres": avg_genres,
-        "avg_etiquettes": avg_etiquettes,
-        "avg_createurs": avg_createurs,
-        "createur_genre": list(createur_genre),
-        "createur_top": list(createur_top),
-    }
-    return render(request, "main/podcast_stats.html", context)
+    # return JsonResponse(context)
+    return render(request, 'main/podcast_stats.html', context)
