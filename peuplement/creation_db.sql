@@ -1,6 +1,7 @@
 -- =====================================================
 -- 1. Création de la base de données
--- path : E:/thierno/TRAVAIL/PROJET_PERSO/OBCAST/mysite/peuplement/creation_db.sql
+-- path : \i E:/thierno/TRAVAIL/PROJET_PERSO/OBCAST/peuplement/creation_db.sql
+
 -- =====================================================
 -- CREATE DATABASE obcast_project;
 

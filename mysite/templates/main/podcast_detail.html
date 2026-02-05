@@ -67,10 +67,8 @@
                 <div class="mb-2">
                     <b>{{ c.prenom|capfirst }} {{ c.nom|upper }}</b>
                     <ul class="ml-4 text-sm">
-                        <li title="Adresse mail du créateur">Mail : {{ c.mail }}</li>
                         <li title="Genre du créateur">Genre : {{ c.genre }}</li>
-                        <li title="Est-ce l'animateur principal ?">Host : {{ c.is_host }}</li>
-                        <li title="Catégorie du créateur">Catégorie : {{ c.categoeir_createur }}</li>
+                        <li title="Catégorie du créateur">Catégorie : {{ c.categorie_createur }}</li>
                     </ul>
                 </div>
             {% empty %}-{% endfor %}

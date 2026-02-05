@@ -24,5 +24,10 @@ urlpatterns = [
     path("podcast", views.podcast, name="podcast"),
     path("podcast/<int:podcast_id>/", views.podcast_detail, name="podcast_detail"),
     path("podcast-stats/", views.podcast_stats, name="podcast_stats"),
-    path("test", views.podcasts_list, name="mm")
+    path("recherche/", views.podcast_search, name="podcast_recherche"), # pour recherche avancer a faire
+    path("telechargement/", views.telechargement, name="download"), 
+    # pas besois de faire a propos juste ajouter un id ancre dans la page accueil.html
+    path("methodologie/", views.methodologie, name="methodologie"),
+    path("publication_event/", views.publication_event, name="publication_event"), 
+    path("contact", views.contact, name="contact")
 ]
