@@ -1,15 +1,8 @@
-from django.shortcuts import render, HttpResponse, get_object_or_404
-from django.http import JsonResponse
-
-from django.db.models import F, Q, FloatField, ExpressionWrapper, Avg, Min, Max, Sum
-from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models.functions import ExtractYear, NullIf
-from django.db import models
-from django.db.models import Count, Q
+from django.shortcuts import render, HttpResponse
+from django.db.models import Sum, Count
 from django.core.paginator import Paginator
 
-
-from .models import Podcast, Genre, Producteur, Plateforme, Rubrique, MotCle, Createur 
+from .models import Podcast, Genre, Producteur, Createur 
 
 import csv
 from datetime import datetime
@@ -211,8 +204,6 @@ def podcast_detail(request, podcast_id):
     ).get(id=podcast_id)
 
     return render(request, "main/podcast_detail.html", {"podcast": podcast})
-
-
 
 
 def podcast_stats(request):
